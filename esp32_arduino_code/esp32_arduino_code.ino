@@ -1,3 +1,4 @@
+#define magic_N 11484
 #define pinG 18
 #define pinR 19
 #define led 2
@@ -61,7 +62,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(pinG), handleInterruptG, CHANGE);
 
   while (true) {
-    POS = CWcounter > 0 ? ((CWcounter % 11484) * 360) / 11484 : ((11484 + (CWcounter % 11484)) * 360) / 11484;
+    POS = CWcounter > 0 ? ((CWcounter % magic_N) * 360) / magic_N : ((magic_N + (CWcounter % magic_N)) * 360) / magic_N;
     VEL = POS - oldPOS;
     oldPOS = POS;
 
