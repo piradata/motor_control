@@ -86,10 +86,11 @@ void setup() {
       portEXIT_CRITICAL(&timerMux);
 
       POS = CWcounter > 0 ? ((CWcounter % magic_N) * 360) / magic_N : ((magic_N + (CWcounter % magic_N)) * 360) / magic_N;
+      //esse daqui de cima é a posição atual do motor XD
       VEL = POS - oldPOS;
       oldPOS = POS;
 
-      REF = (analogRead(pot) * 360) / 4095;
+      REF = (analogRead(pot) * 360) / 4095;//////////////////////////////aqui é o valor de referencia
       REF_F = 0.561 * REF_F + (1 - 0.561) * REF;
 
       erro  = REF_F > POS ? ((REF_F - POS) < 180 ? REF_F - POS : -POS - 360 + REF_F) : ((POS - REF_F) > 180 ? REF_F + 360 - POS : -POS + REF_F);
