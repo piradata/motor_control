@@ -120,6 +120,8 @@ void setup() {
       enviaValores(POS);
       VEL = POS - oldPOS;
       if (VEL % 360 == 0) VEL = 0;
+      if (VEL > 180) VEL -= 360;
+      if (VEL < -180) VEL += 360;
       oldPOS = POS;
 
       //REF = (analogRead(pot) * 360) / 4095;
