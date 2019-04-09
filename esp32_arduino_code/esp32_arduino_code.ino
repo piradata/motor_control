@@ -2,6 +2,8 @@
 #include "Esp32MQTTClient.h"
 #include <PubSubClient.h>
 
+
+//define DEBUG
 #define magic_N 11528 //22*524////inicial 11484//22*522
 #define pinG 18
 #define pinR 19
@@ -89,11 +91,14 @@ void setup() {
   GG = digitalRead(pinG);
   RR = digitalRead(pinR);
   portEXIT_CRITICAL_ISR(&mux);
+
+#ifdef DEBUG
   Serial.print(GG);
   Serial.print("/");
   Serial.print(RR);
   Serial.print("/");
   Serial.println(CWcounter);
+#endif
 
   conectaWiFi();
   MQTT.setServer(BROKER_MQTT, BROKER_PORT);
@@ -116,25 +121,37 @@ void setup() {
       mantemConexoes();
       MQTT.loop();
 
+
+//ajuste de posição atual pelo encoder
+//pode ser facilmente ajustado para usar potenciometro ao invez de encoder e fazer um servomotor de 360 graus
       POS = CWcounter > 0 ? ((CWcounter % magic_N) * 360) / magic_N : ((magic_N + (CWcounter % magic_N)) * 360) / magic_N;
       enviaValores(POS);
+
+      //velocidade
       VEL = POS - oldPOS;
+
+      //ajuste de velocidade para mudança em singularidade 360||0
       if (VEL % 360 == 0) VEL = 0;
       oldPOS = POS;
+
 
       //REF = (analogRead(pot) * 360) / 4095;
       if (nREF >= 0 and nREF <= 360) REF = nREF;
       //REF_F = 0.2 * REF_F + (1 - 0.2) * REF;
       REF_F = REF;
 
+      //correção de erro para posição similar mais proxima
       erro  = REF_F > POS ? ((REF_F - POS) < 180 ? REF_F - POS : -POS - 360 + REF_F) : ((POS - REF_F) > 180 ? REF_F + 360 - POS : -POS + REF_F);
 
+      //PID
       out =  Kp * (erro - (Kd * VEL) / H_T);
       OUTF = 0.96 * OUTF + 0.04 * out;
 
+//corte de valor maximo e minimo
       if (OUTF >  1023) OUTF = 1023;
       if (OUTF < -1023) OUTF = -1023;
 
+//mudança de canal da ponte H para garantir direção correta de movimento
       if (OUTF > 0) {
         ledcWrite(MAChannel, 0);
         ledcWrite(MBChannel, OUTF);
@@ -144,6 +161,7 @@ void setup() {
         ledcWrite(MAChannel, -OUTF);
       }
 
+#ifdef DEBUG
       Serial.print(CWcounter);
       Serial.print("\t");
       Serial.print(POS);
@@ -153,12 +171,13 @@ void setup() {
       Serial.print(erro);
       Serial.print("\t");
       Serial.println(OUTF);
-
+#endif
       lasterro = erro;
     }
   }
 }
 
+//haha fuck the loop
 void loop() {
   ;
 }
