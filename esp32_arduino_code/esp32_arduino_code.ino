@@ -20,7 +20,7 @@
 #define Kd 0.5
 #define H_T 0.1
 
-#define ID_MQTT  "Pedroza08"             //Informe um ID unico e seu. Caso sejam usados IDs repetidos a ultima conexão irá sobrepor a anterior. 
+#define ID_MQTT  "Pedroza13"             //Informe um ID unico e seu. Caso sejam usados IDs repetidos a ultima conexão irá sobrepor a anterior. 
 #define TOPIC_SUBSCRIBE "referencia"   //Informe um Tópico único. Caso sejam usados tópicos em duplicidade, o último irá eliminar o anterior.
 #define TOPIC_PUBLISH "posição"
 
@@ -132,6 +132,8 @@ void setup() {
 
       //ajuste de velocidade para mudança em singularidade 360||0
       if (VEL % 360 == 0) VEL = 0;
+      if (VEL > 180) VEL -= 360;
+      if (VEL < -180) VEL += 360;
       oldPOS = POS;
 
 
