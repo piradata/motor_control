@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include "Esp32MQTTClient.h"
 #include <PubSubClient.h>
 
 //definir 360 como totalRot e trocar os 180 por isso/2 ? talvez, preguiça, mas boa ideia se n tiver algum lugar em que isso n possa ser feito
@@ -38,8 +37,8 @@ int REF = 0, nREF = 0, REF_F = 0;
 int out, OUTF = 0;
 
 //WiFi
-const char* SSID = "PIRADATA";               // SSID / nome da rede WiFi que deseja se conectar
-const char* PASSWORD = "guifernandabf";      // Senha da rede WiFi que deseja se conectar
+const char* SSID = "Thiago";               // SSID / nome da rede WiFi que deseja se conectar
+const char* PASSWORD = "12345678";      // Senha da rede WiFi que deseja se conectar
 
 //MQTT Server
 const char* BROKER_MQTT = "iot.eclipse.org"; //URL do broker MQTT que se deseja utilizar
@@ -159,10 +158,10 @@ void setup() {
 
       //~PID~
       //erroI += erro
-      //erro==0?erroI=0
-      //erroI>xx?erroI=xx
+      ////erro==0?erroI=0
+      //erroI>xx?erroI=xx //xx é o valor maximo ou miimo de windup
       //erroI<-xx?erroI=-xx
-      //out =  Kp * (erro - (Kd * VEL) / H_T + erroI);
+      //out =  Kp * (erro - (Kd * VEL) / H_T + erroI * H_T);
 
       //PD
       out =  Kp * (erro - (Kd * VEL) / H_T);
@@ -201,7 +200,7 @@ void setup() {
 }
 
 //haha fuck the loop
-//obs se eu simplesmente tirar a função o arduino da chilique
+//obs: se eu simplesmente tirar a função o arduino da chilique
 void loop() {
   ;//#HCF;
 }
