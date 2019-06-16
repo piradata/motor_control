@@ -16,10 +16,13 @@
 #define MBChannel  1
 #define resolution  10 //PWM 0 -> 1023
 
-//constantes PID
-#define Kp 360
-#define Kd 0.5
+//constantes PID digital
 #define H_T 0.1
+#define Kp 360
+#define Kd 170
+#define Ki 0
+#define WINDUP 0
+
 
 //some comunications here
 #define ID_MQTT  "Pedroza13"             //Informe um ID unico e seu. Caso sejam usados IDs repetidos a ultima conexão irá sobrepor a anterior. 
@@ -37,8 +40,8 @@ int REF = 0, nREF = 0, REF_F = 0;
 int out, OUTF = 0;
 
 //WiFi
-const char* SSID = "Thiago";               // SSID / nome da rede WiFi que deseja se conectar
-const char* PASSWORD = "12345678";      // Senha da rede WiFi que deseja se conectar
+const char* SSID = "PIRADATA";               // SSID / nome da rede WiFi que deseja se conectar
+const char* PASSWORD = "guifernandabf";      // Senha da rede WiFi que deseja se conectar
 
 //MQTT Server
 const char* BROKER_MQTT = "iot.eclipse.org"; //URL do broker MQTT que se deseja utilizar
@@ -157,14 +160,14 @@ void setup() {
       erro  = REF_F > POS ? ((REF_F - POS) < 180 ? REF_F - POS : -POS - 360 + REF_F) : ((POS - REF_F) > 180 ? REF_F + 360 - POS : -POS + REF_F);
 
       //~PID~
-      //erroI += erro
-      ////erro==0?erroI=0
-      //erroI>xx?erroI=xx //xx é o valor maximo ou miimo de windup
-      //erroI<-xx?erroI=-xx
-      //out =  Kp * (erro - (Kd * VEL) / H_T + erroI * H_T);
+      //erroI += erro * H_T
+      ////erro==0?erroI=0 //reset for systems with no inertia
+      //erroI>WINDUP?erroI=WINDUP //WINDUP é o valor maximo ou minimo de windup
+      //erroI<-WINDUP?erroI=-WINDUP
+      //out =  Kp * erro - (Kd * VEL) / H_T + erroI;
 
       //PD
-      out =  Kp * (erro - (Kd * VEL) / H_T);
+      out =  Kp * erro - (Kd * VEL) / H_T;
 
       //filtro passa baixa na saida para evitar trocas brucas na ponte H e prejudicala ou reiniciala por troca instantanea de saida de canal gerando pico de tensão na bobina do motor
       OUTF = 0.96 * OUTF + 0.04 * out;
