@@ -1,20 +1,21 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-//definir 360 como totalRot e trocar os 180 por isso/2 ? talvez, preguiça, mas boa ideia se n tiver algum lugar em que isso n possa ser feito
+//definir 360 como totalRot e trocar os 180 por isso/2 ?
+//boa ideia se n tiver algum lugar em que isso n possa ser feito
 
 //define DEBUG
 #define magic_N 11528 //22*524////inicial 11484//22*522
 #define pinG 18
 #define pinR 19
 #define led 2
-#define pot 4
+//#define pot 4  //for legacy purpose, was used for tests before
 #define freq 10000
 #define MA 22
 #define MB 23
 #define MAChannel  0
 #define MBChannel  1
-#define resolution  10 //PWM 0 -> 1023
+#define resolution  10 //PWM = 0 -> 1023
 
 //constantes PID digital
 #define H_T 0.1
@@ -23,6 +24,13 @@
 #define Ki 0
 #define WINDUP 0
 
+//comment the next line if you want to use PID instead of PD
+#define _PD
+
+#ifndef _PD
+#define _PID
+#endif
+//----------------------------------------------------------------------
 
 //some comunications here
 #define ID_MQTT  "Pedroza13"             //Informe um ID unico e seu. Caso sejam usados IDs repetidos a ultima conexão irá sobrepor a anterior. 
@@ -34,7 +42,9 @@ volatile int CWcounter = 0;
 volatile int timerFlag = 0;
 
 int erro, lasterro = 0;
-//int erroI = 0;
+#ifdef _PID
+int erroI = 0;
+#endif
 int POS, oldPOS = 0, VEL = 0;
 int REF = 0, nREF = 0, REF_F = 0;
 int out, OUTF = 0;
@@ -132,6 +142,9 @@ void setup() {
       timerFlag--;
       portEXIT_CRITICAL(&timerMux);
 
+      //led to indicate timer interrupt overflow
+      timerFlag>0?digitalWrite(led,HIGH):digitalWrite(led,LOW);
+
       mantemConexoes();
       MQTT.loop();
 
@@ -159,16 +172,20 @@ void setup() {
       //correção de erro para posição similar mais proxima
       erro  = REF_F > POS ? ((REF_F - POS) < 180 ? REF_F - POS : -POS - 360 + REF_F) : ((POS - REF_F) > 180 ? REF_F + 360 - POS : -POS + REF_F);
 
-      //~PID~
-      //erroI += erro * H_T
-      ////erro==0?erroI=0 //reset for systems with no inertia
-      //erroI>WINDUP?erroI=WINDUP //WINDUP é o valor maximo ou minimo de windup
-      //erroI<-WINDUP?erroI=-WINDUP
-      //out =  Kp * erro - (Kd * VEL) / H_T + erroI;
+      #ifdef _PID
+      //PID
+      erroI += erro * H_T
+      //erro==0?erroI=0 //reset for systems with no inertia
+      erroI>WINDUP?erroI=WINDUP //WINDUP é o valor maximo ou minimo de windup
+      erroI<-WINDUP?erroI=-WINDUP
+      out =  Kp * erro - (Kd * VEL) / H_T + erroI;
+      #endif
 
+      #ifdef _PD
       //PD
       out =  Kp * erro - (Kd * VEL) / H_T;
-
+      #endif
+      
       //filtro passa baixa na saida para evitar trocas brucas na ponte H e prejudicala ou reiniciala por troca instantanea de saida de canal gerando pico de tensão na bobina do motor
       OUTF = 0.96 * OUTF + 0.04 * out;
 
