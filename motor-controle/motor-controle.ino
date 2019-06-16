@@ -4,7 +4,7 @@
 //definir 360 como totalRot e trocar os 180 por isso/2 ?
 //boa ideia se n tiver algum lugar em que isso n possa ser feito
 
-//define DEBUG
+//define DEBUG //uncomment this for serial write of debug data
 #define magic_N 11528 //22*524////inicial 11484//22*522
 #define pinG 18
 #define pinR 19
@@ -95,9 +95,10 @@ void IRAM_ATTR handleInterruptG() {
 //caso faça, é bom colocar um filtro de debouncing para evitar os ruidos
 
 void setup() {
+#ifdef DEBUG
   Serial.begin(115200);
-
-//nada alem de definições de hardware uteis aqui...
+#endif
+  //nada alem de definições de hardware uteis aqui...
 
   ledcSetup(MAChannel, freq, resolution);
   ledcAttachPin(MA, MAChannel);
@@ -137,22 +138,20 @@ void setup() {
 
   while (true) {
     if (timerFlag > 0) {
-
       portENTER_CRITICAL(&timerMux);
       timerFlag--;
       portEXIT_CRITICAL(&timerMux);
 
       //led to indicate timer interrupt overflow
-      timerFlag>0?digitalWrite(led,HIGH):digitalWrite(led,LOW);
+      timerFlag > 0 ? digitalWrite(led, HIGH) : digitalWrite(led, LOW);
 
       mantemConexoes();
       MQTT.loop();
 
-
       //ajuste de posição atual pelo encoder
       //pode ser facilmente ajustado para usar potenciometro ao invez de encoder e fazer um servomotor de 360 graus
       POS = CWcounter > 0 ? ((CWcounter % magic_N) * 360) / magic_N : ((magic_N + (CWcounter % magic_N)) * 360) / magic_N;
-      enviaValores(POS);
+      enviaValores(POS);//implementar algo para enviar de tanto em tanto tempo e não em todo ciclo de controle como esta agora...
 
       //velocidade
       VEL = POS - oldPOS;
@@ -172,20 +171,18 @@ void setup() {
       //correção de erro para posição similar mais proxima
       erro  = REF_F > POS ? ((REF_F - POS) < 180 ? REF_F - POS : -POS - 360 + REF_F) : ((POS - REF_F) > 180 ? REF_F + 360 - POS : -POS + REF_F);
 
-      #ifdef _PID
-      //PID
-      erroI += erro * H_T
-      //erro==0?erroI=0 //reset for systems with no inertia
-      erroI>WINDUP?erroI=WINDUP //WINDUP é o valor maximo ou minimo de windup
-      erroI<-WINDUP?erroI=-WINDUP
+#ifdef _PID
+      erroI += erro * H_T;
+      //erro==0?erroI=0; //reset for systems with no inertia
+      erroI > WINDUP ? erroI = WINDUP; //WINDUP é o valor maximo ou minimo de windup
+      erroI < -WINDUP ? erroI = -WINDUP;
       out =  Kp * erro - (Kd * VEL) / H_T + erroI;
-      #endif
+#endif
 
-      #ifdef _PD
-      //PD
+#ifdef _PD
       out =  Kp * erro - (Kd * VEL) / H_T;
-      #endif
-      
+#endif
+
       //filtro passa baixa na saida para evitar trocas brucas na ponte H e prejudicala ou reiniciala por troca instantanea de saida de canal gerando pico de tensão na bobina do motor
       OUTF = 0.96 * OUTF + 0.04 * out;
 
@@ -273,9 +270,9 @@ void conectaMQTT() {
     else {
 #ifdef DEBUG
       Serial.println("Não foi possivel se conectar ao broker.");
-      Serial.println("Nova tentatica de conexao em 10s");
+      Serial.println("Nova tentatica de conexao em 5s");
 #endif
-      delay(10000);
+      delay(5000);
     }
   }
 }
