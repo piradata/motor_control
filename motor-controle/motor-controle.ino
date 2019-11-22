@@ -81,6 +81,8 @@ void IRAM_ATTR handleInterruptG() {
   if (digitalRead(pinG) != GG) {
     //essa função é linda e muito promissora, mas não para esse caso
     //(GG != oldGG)?(GG==RR?CWcounter--:CWcounter++):(GG==RR?CWcounter++:CWcounter--);
+    //But This is better
+    //(GG != oldGG)^(GG==RR)? CWcounter++ : CWcounter--;
     GG = !GG;
     RR = digitalRead(pinR);
     portENTER_CRITICAL_ISR(&mux);
